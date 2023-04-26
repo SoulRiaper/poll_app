@@ -2,66 +2,41 @@
 
 namespace app\controllers;
 
-use PhpParser\JsonDecoder;
+
+use PollService\PollService;
 use Yii;
 use yii\base\Controller;
 use app\models\Poll;
 use app\models\PollOptions;
-use yii\filters\AccessControl;
-use yii\filters\VerbFilter;
 
 class PollController extends Controller
 {
       public function actionGetpolls() // возвращает json со всеми опросами(их название и текст)
       {
-
-            $result = ['polls' => []];
-
             $polls = Poll::find()->all();
+            $result = array();
 
-            foreach($polls as $poll)
-            {
-                  array_push($result['polls'], [
-                        "poll_id" => $poll->poll_id ,
-                        'poll_name' => $poll->poll_name,
-                        'poll_text' => $poll->poll_text
-                  ]);
+            foreach ($polls as $poll) {
+                  array_push($result,
+                  PollService::getPollObj($poll)
+            );
             }
+
             return json_encode($result, JSON_UNESCAPED_UNICODE); // возвращает json
       }
 
       public function actionGetpollandoptions() // получаем опрос и все варианты ответа на него, по id 
       {
             $id = $_GET['id'];
-            $poll = Poll::findOne($id);
-            $pollOptions = PollOptions::find()->where(['poll_id' => $id])->all();
 
-            $result = ['poll' =>  //добавляем в итоговый массив название и текст опроса
-            [
-                  'poll_id' => $poll->poll_id,
-                  'poll_name' => $poll->poll_name,
-                  'poll_text' => $poll->poll_text,
-                  'poll_options' =>[]
-            ]];
-
-            foreach ($pollOptions as $option) { // добавляем все его варианты ответа
-                  array_push($result['poll']['poll_options'], 
-                  [
-                        'option_title' => $option->option_title,
-                        'votes' => $option->votes
-                  ]);
-            }
-            return json_encode($result, JSON_UNESCAPED_UNICODE); // возвращает json
+            return json_encode(PollService::getPollById($id), JSON_UNESCAPED_UNICODE); // возвращает json
       }
 
       public function actionVote()// ACTION метод нужен для добавления голоса в бд (принимает option_id в строке запроса url'...&optionId=your-option-id')
       {
-            $optionid = $_GET['optionId'];
+            $optionId = $_GET['optionId'];
 
-            $pollOption = PollOptions::findOne($optionid);
-
-            $pollOption->votes += 1;
-            $pollOption->save();
+            PollService::VoteOne($optionId);
 
             return json_encode(['message' => 'Ok'], JSON_UNESCAPED_UNICODE);
       }
@@ -75,18 +50,18 @@ class PollController extends Controller
 
                   $poll = $json->{'poll'};
 
-                  $pollId = Poll::find()->count() + 1;
-                  $pollName = $poll->{'poll_name'};
+                  $pollId = Poll::find()->count() + 1; //определяем id нового опроса (колличество + 1)
+                  $pollName = $poll->{'poll_name'}; // достаем данные из пришедшего json
                   $pollText = $poll->{'poll_text'};
                   $pollOptions = $poll->{'poll_options'};
 
-                  $dbPoll = new Poll();
+                  $dbPoll = new Poll(); // создаем запись о опросе в бд
                   $dbPoll->poll_id = $pollId;
                   $dbPoll->poll_name = $pollName;
                   $dbPoll->poll_text = $pollText;
                   $dbPoll->save();
 
-                  foreach ($pollOptions as $option) {
+                  foreach ($pollOptions as $option) { // создаем все варианты ответов опроса
                         $optionClass = new PollOptions();
                         $optionClass->poll_id = $pollId;
                         $optionClass->option_title = $option;
@@ -95,8 +70,13 @@ class PollController extends Controller
 
                   return json_encode(['message' => 'OK']);
             }
-            else{
+            else{ // если на роут пришел запрос != "POST" выдаем сообщение об ошибке
                   return json_encode(['error' => 'BAD REQUEST']);
             }
+      }
+
+      public function actionTest()
+      {
+           return PollService::Hello('hello Traaaash');
       }
 }
