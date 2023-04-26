@@ -7,12 +7,17 @@ use app\models\PollOptions;
 
 class PollService
 {
-      public static function getPollObj($poll): PollDto // принимает обьект из базы данных и позвращает Dto обьект
+      /* МЕТОДЫ МАНИПУЛЯЦИИ ОПРОСАМИ */
+
+      /* принимает обьект из базы данных и позвращает Dto обьект */
+      public static function getPollObj($poll): PollDto
       {
             $poll = new PollDto( $poll->poll_id , $poll->poll_name, $poll->poll_text, []);
             return $poll;
       }
-      public static function getPollById(int $id) // возвращяет DTO обьект по id опроса
+      
+      /* возвращяет DTO обьект по id опроса */
+      public static function getPollById(int $id) 
       {
             $poll = Poll::findOne($id);
             $pollOptions = PollOptions::find()->where(['poll_id' => $id])->all(); //
@@ -27,15 +32,29 @@ class PollService
             }
             return $poll;
       }
-      public static function VoteOne(int $option_id) // по id варианта ответа добавляет колличетво голосов
+
+      /* МЕТОДЫ МАНИПУЛЯЦИИ ВАРИАНТАМИ ОТВЕТОВ */
+
+      /* по id варианта ответа добавляет колличетво голосов */
+      public static function VoteOne(int $option_id)
       {
             $pollOption = PollOptions::findOne($option_id);
 
             $pollOption->votes += 1;
             $pollOption->save();
       }
-      public static function unpackPollFromJson($json)
+
+      /* ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ */
+
+      /* метод достает из json обьекта Dto опроса */
+      public static function getPollFromJson($json)
       {
-            
+            $poll = new PollDto( //достаем из JSON обьекта данные для DTO
+                  $json->{'poll_id'},
+                  $json->{'poll_name'},
+                  $json->{'poll_text'},
+                  $json->{'poll_options'},
+
+            );
       }
 }
