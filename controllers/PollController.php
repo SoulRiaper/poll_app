@@ -52,24 +52,48 @@ class PollController extends Controller
             $req = Yii::$app->request;
 
             if($req->isPost){
+
                   $json = json_decode($req->getRawBody());
+                  $pollDTO = PollService::getPollFromJson($json); //декодим json и получаем обьект DTO из него 
 
-
-
-                  $pollId = Poll::find()->count() + 1; //определяем id нового опроса (колличество + 1)
-                  
-
-                  foreach ($pollOptions as $option) { // создаем все варианты ответов опроса
-                        $optionClass = new PollOptions();
-                        $optionClass->poll_id = $pollId;
-                        $optionClass->option_title = $option;
-                        $optionClass->save();
+                  try {
+                        PollService::createPoll($pollDTO);
+                  } catch (\Throwable $th) {
+                        return $th;
                   }
-
                   return json_encode(['message' => 'OK']);
             }
             else{ // если на роут пришел запрос != "POST" выдаем сообщение об ошибке
                   return json_encode(['error' => 'BAD REQUEST']);
             }
+      }
+
+      /* ACTION принимает id из строки запроса, обновляет опрос из json-а */
+      public function actionUpdatepoll()
+      {
+            $req = Yii::$app->request;
+            $pollId = $_GET['id'];
+
+            if ($req->isPut) {
+                  $json = json_decode($req->getRawBody());
+
+                  $pollDTO = PollService::getPollFromJson($json);
+                  PollService::updatePoll($pollId, $pollDTO);
+                  return json_encode(['message' => 'OK']);
+            }
+            return json_encode(['error' => 'BAD REQUEST']);
+      }
+
+      /* ACTION удалят выбранный опрос (id указывается в строке запроса url) */
+      public function actionDeletepoll()
+      {
+            $req = Yii::$app->request;
+            $pollId = $_GET['id'];
+
+            if ($req->isDelete) {
+                  PollService::deletePoll($pollId);
+                  return json_encode(['message' => 'OK']);
+            }
+            return json_encode(['error' => 'BAD REQUEST']);
       }
 }
