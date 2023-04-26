@@ -2,6 +2,8 @@
 
 namespace app\controllers;
 
+use PhpParser\JsonDecoder;
+use Yii;
 use yii\base\Controller;
 use app\models\Poll;
 use app\models\PollOptions;
@@ -10,42 +12,6 @@ use yii\filters\VerbFilter;
 
 class PollController extends Controller
 {
-      public function behaviors()
-    {
-        return [
-            'access' => [
-                'class' => AccessControl::className(),
-                'only' => ['logout'],
-                'rules' => [
-                    [
-                        'actions' => ['logout'],
-                        'allow' => true,
-                        'roles' => ['@'],
-                    ],
-                ],
-            ],
-            'verbs' => [
-                'class' => VerbFilter::className(),
-                'actions' => [
-                    'logout' => ['post'],
-                ],
-            ],
-        ];
-    }
-
-    public function actions()
-    {
-        return [
-            'error' => [
-                'class' => 'yiiwebErrorAction',
-            ],
-            'captcha' => [
-                'class' => 'yiicaptchaCaptchaAction',
-                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
-            ],
-        ];
-    }
-
       public function actionGetpolls() // возвращает json со всеми опросами(их название и текст)
       {
 
@@ -88,7 +54,7 @@ class PollController extends Controller
             return json_encode($result, JSON_UNESCAPED_UNICODE); // возвращает json
       }
 
-      public function actionVote()
+      public function actionVote()// ACTION метод нужен для добавления голоса в бд (принимает option_id в строке запроса url'...&optionId=your-option-id')
       {
             $optionid = $_GET['optionId'];
 
@@ -98,5 +64,39 @@ class PollController extends Controller
             $pollOption->save();
 
             return json_encode(['message' => 'Ok'], JSON_UNESCAPED_UNICODE);
+      }
+      
+      public function actionCreatepoll() // ACTION принимает json служит для добавления нового опроса
+      {
+            $req = Yii::$app->request;
+
+            if($req->isPost){
+                  $json = json_decode($req->getRawBody());
+
+                  $poll = $json->{'poll'};
+
+                  $pollId = Poll::find()->count() + 1;
+                  $pollName = $poll->{'poll_name'};
+                  $pollText = $poll->{'poll_text'};
+                  $pollOptions = $poll->{'poll_options'};
+
+                  $dbPoll = new Poll();
+                  $dbPoll->poll_id = $pollId;
+                  $dbPoll->poll_name = $pollName;
+                  $dbPoll->poll_text = $pollText;
+                  $dbPoll->save();
+
+                  foreach ($pollOptions as $option) {
+                        $optionClass = new PollOptions();
+                        $optionClass->poll_id = $pollId;
+                        $optionClass->option_title = $option;
+                        $optionClass->save();
+                  }
+
+                  return json_encode(['message' => 'OK']);
+            }
+            else{
+                  return json_encode(['error' => 'BAD REQUEST']);
+            }
       }
 }
