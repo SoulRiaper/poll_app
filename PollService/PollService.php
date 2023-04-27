@@ -4,6 +4,7 @@ namespace PollService;
 
 use app\models\Poll;
 use app\models\PollOptions;
+use Yii;
 use yii\base\UserException;
 
 class PollService
@@ -78,10 +79,28 @@ class PollService
       /* по id варианта ответа добавляет колличетво голосов */
       public static function VoteOne(int $option_id)
       {
-            $pollOption = PollOptions::findOne($option_id);
+            $session = Yii::$app->session; //подгружаем сессии
+            $session->open();
 
-            $pollOption->votes += 1;
-            $pollOption->save();
+            $pollOption = PollOptions::findOne($option_id);
+            $pollId = $pollOption->poll_id;
+
+            if(! $session->has('poll_id')) // если еще нет голосов у пользователя создаем пустой массив
+            {
+                  $session->set('poll_id', array());
+            }
+            if(! in_array($pollId , $session['poll_id'])) // если еще нет данного опроса в списке отвеченных начисляем голос и записываем в сессию 
+            {
+                  $pollOption->votes += 1;
+                  $pollOption->save();
+
+                  $session['poll_id'] = array_merge($session['poll_id'], [$pollId]);
+            }
+            else{ // выдает эксепшн, если пользователь уже голосовал
+                  throw new UserException("Уже проголосовал");
+                  
+            }
+            
       }
 
       /* ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ */
@@ -95,13 +114,12 @@ class PollService
             if (!isset($json->poll_options)) {
                   $json->poll_options = [];
             }
-            $poll = new PollDto( //достаем из JSON обьекта данные для DTO
+            return new PollDto( //достаем из JSON обьекта данные для DTO и возвращаем их 
                   $json->poll_id,
                   $json->poll_name,
                   $json->poll_text,
                   $json->poll_options,
 
             );
-            return $poll;
       }
 }

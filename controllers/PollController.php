@@ -8,6 +8,7 @@ use Yii;
 use yii\base\Controller;
 use app\models\Poll;
 use app\models\PollOptions;
+use yii\base\UserException;
 
 class PollController extends Controller
 {
@@ -39,11 +40,16 @@ class PollController extends Controller
       /* ACTION метод нужен для добавления голоса в бд (принимает option_id в строке запроса url'...&optionId=your-option-id') */
       public function actionVote()
       {
+            $session = Yii::$app->session;
+
             $optionId = $_GET['optionId'];
 
-            PollService::VoteOne($optionId);
-
-            return json_encode(['message' => 'Ok'], JSON_UNESCAPED_UNICODE);
+            try {
+                  PollService::VoteOne($optionId);
+                  return json_encode(['message' => 'Ok'], JSON_UNESCAPED_UNICODE);
+            } catch (UserException $ex) {
+                  return json_encode(['exception' => "Catch exception: " . $ex->getMessage()], JSON_UNESCAPED_UNICODE);
+            }            
       }
       
       /* ACTION принимает json служит для добавления нового опроса */
