@@ -28,6 +28,7 @@ class PollService
             foreach ($pollOptions as $option) { // добавляем все его варианты ответа
                   array_push($poll->poll_options, 
                   [
+                        'option_id' => $option->option_id,
                         'option_title' => $option->option_title,
                         'votes' => $option->votes
                   ]);
