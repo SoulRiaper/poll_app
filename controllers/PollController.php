@@ -118,4 +118,16 @@ class PollController extends Controller
 
             return PollService::getUserPolls();
       }
+
+      public function actionSetcache()
+      {
+            $fromUser = $_GET['var'];
+
+            $cache = Yii::$app->redis->set('var' ,$fromUser);
+      }
+      public function actionGetcache(){
+            Yii::$app->response->format = Response::FORMAT_JSON;
+
+            return ["var_value" => Yii::$app->redis->get('var')];
+      }
 }

@@ -2,10 +2,17 @@
 
 return [
     'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=31.31.196.209;dbname=u1956828_polls',
-    'username' => 'u1956828_pollrt',
-    'password' => 'sJ7oU0xO3yjO9gM1',
+    'dsn' => 'mysql:host=localhost:3306;dbname=sys',
+    'username' => 'root',
+    'password' => '1001',
     'charset' => 'utf8mb4',
+
+    /* for docker containers network */
+//     'class' => 'yii\db\Connection',
+//     'dsn' => 'mysql:host=pass-mysql-id-container:3306;dbname=sys',
+//     'username' => 'root',
+//     'password' => '1001',
+//     'charset' => 'utf8mb4',
 
     // Schema cache options (for production environment)
     //'enableSchemaCache' => true,
