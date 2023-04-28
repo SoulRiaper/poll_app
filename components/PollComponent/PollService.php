@@ -1,7 +1,8 @@
 <?php
 
-namespace PollService;
+namespace app\components\Pollcomponent;
 
+use app\components\SessionComponent\SessionService;
 use app\models\Poll;
 use app\models\PollOptions;
 use Yii;
@@ -14,8 +15,7 @@ class PollService
       /* принимает обьект из базы данных и позвращает Dto обьект */
       public static function getPollObj($poll): PollDto
       {
-            $poll = new PollDto( $poll->poll_id , $poll->poll_name, $poll->poll_text, []);
-            return $poll;
+            return new PollDto( $poll->poll_id , $poll->poll_name, $poll->poll_text, []);
       }
       
       /* возвращяет DTO обьект по id опроса */
@@ -80,26 +80,23 @@ class PollService
       /* по id варианта ответа добавляет колличетво голосов */
       public static function VoteOne(int $option_id)
       {
-            $session = Yii::$app->session; //подгружаем сессии
-            $session->open();
 
             $pollOption = PollOptions::findOne($option_id);
             $pollId = $pollOption->poll_id;
 
-            if(! $session->has('poll_id')) // если еще нет голосов у пользователя создаем пустой массив
+            if(!SessionService::isSet('voted_poll_id')) // если еще нет голосов у пользователя создаем пустой массив
             {
-                  $session->set('poll_id', array());
+                  SessionService::setVariable('voted_poll_id', array());
             }
-            if(! in_array($pollId , $session['poll_id'])) // если еще нет данного опроса в списке отвеченных начисляем голос и записываем в сессию 
+            if(! SessionService::isInArray('voted_poll_id', $pollId)) // если еще нет данного опроса в списке отвеченных начисляем голос и записываем в сессию 
             {
                   $pollOption->votes += 1;
                   $pollOption->save();
 
-                  $session['poll_id'] = array_merge($session['poll_id'], [$pollId]);
+                  SessionService::addInArrayValue('voted_poll_id', $pollId);
             }
             else{ // выдает эксепшн, если пользователь уже голосовал
                   throw new UserException("Уже проголосовал");
-                  
             }
             
       }
@@ -120,7 +117,6 @@ class PollService
                   $json->poll_name,
                   $json->poll_text,
                   $json->poll_options,
-
             );
       }
 }

@@ -3,11 +3,10 @@
 namespace app\controllers;
 
 
-use PollService\PollService;
+use app\components\Pollcomponent\PollService;
 use Yii;
 use yii\base\Controller;
 use app\models\Poll;
-use app\models\PollOptions;
 use yii\base\UserException;
 use yii\web\Response;
 
@@ -84,6 +83,7 @@ class PollController extends Controller
       public function actionUpdatepoll()
       {
             Yii::$app->response->format = Response::FORMAT_JSON;
+
             $req = Yii::$app->request;
             $pollId = $_GET['id'];
 

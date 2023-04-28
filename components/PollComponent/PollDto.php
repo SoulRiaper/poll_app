@@ -1,6 +1,6 @@
 <?php
 
-namespace PollService;
+namespace app\components\Pollcomponent;
 
 class PollDto
 {
