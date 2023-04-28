@@ -110,4 +110,12 @@ class PollController extends Controller
             }
             return ['error' => 'BAD REQUEST'];
       }
+
+      /* ACTION выдает пользователю его опросы (данные берутся из сессии) если у пользователя нет опросов, возвращает json с error-ом*/
+      public function actionGetuserpolls()
+      {
+            Yii::$app->response->format = Response::FORMAT_JSON;
+
+            return PollService::getUserPolls();
+      }
 }

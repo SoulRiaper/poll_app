@@ -56,11 +56,19 @@ class PollService
                   $optionClass->option_title = $option;
                   $optionClass->save();
             }
+            if (!SessionService::isSet('polls')) { //записываем в сессию id созданного опроса
+                  SessionService::setVariable('polls', array());
+            }
+            SessionService::addInArrayValue('polls', $pollId);
       }
 
-      /* обновляет опрос */
+      /* обновляет опрос, также проверяет наличие у пользователя прав доступа (через сессию) */
       public static function updatePoll(int $pollId, PollDto $pollDTO)
       {
+            if (!SessionService::isSet('polls') || !SessionService::isInArray('polls', $pollId)) //проверка доступа
+            {
+                  throw new UserException('you don`t have permission');
+            }
             $poll = Poll::findOne($pollId);
 
             $poll->poll_name = $pollDTO->poll_name;
@@ -68,11 +76,29 @@ class PollService
             $poll->save();
       }
 
-      /* удаляет опрос */
+      /* удаляет опрос, также проверяет наличие у пользователя прав доступа (через сессию) */
       public static function deletePoll(int $pollId)
       {
+            if (!SessionService::isSet('polls') || !SessionService::isInArray('polls', $pollId)) //проверка доступа
+            {
+                  throw new UserException('you don`t have permission');
+            }
             $poll = Poll::findOne($pollId);
             $poll->delete();
+      }
+
+      public static function getUserPolls()
+      {
+            if (!SessionService::isSet('polls')) {
+                  throw new UserException('you dosen`t have polls');
+            }
+            $pollsId = SessionService::openSession()->get('polls');
+
+            $polls = array();
+            foreach ($pollsId as $pollId) {
+                  $polls[] = PollService::getPollById($pollId);
+            }
+            return $polls;
       }
 
       /* МЕТОДЫ МАНИПУЛЯЦИИ ВАРИАНТАМИ ОТВЕТОВ */
