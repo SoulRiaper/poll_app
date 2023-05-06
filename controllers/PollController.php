@@ -23,9 +23,7 @@ class PollController extends Controller
             $result = array();
 
             foreach ($polls as $poll) { //пушим в массив DTO обьекты
-                  array_push($result,
-                  PollService::getPollObj($poll)
-                  );
+                  $result[] = PollService::getPollObj($poll);
             }
 
             return $result; // возвращает json
@@ -80,7 +78,10 @@ class PollController extends Controller
       }
 
       /* ACTION принимает id из строки запроса, обновляет опрос из json-а */
-      public function actionUpdatepoll()
+    /**
+     * @throws UserException
+     */
+    public function actionUpdatepoll()
       {
             Yii::$app->response->format = Response::FORMAT_JSON;
 
@@ -125,9 +126,10 @@ class PollController extends Controller
 
             $cache = Yii::$app->redis->set('var' ,$fromUser);
       }
+      
       public function actionGetcache(){
             Yii::$app->response->format = Response::FORMAT_JSON;
 
-            return ["var_value" => Yii::$app->redis->get('var')];
+            return PollService::getCachePoll($_GET['poll_id']);
       }
 }

@@ -4,6 +4,7 @@ namespace app\components\Pollcomponent;
 
 use app\components\SessionComponent\SessionService;
 use app\models\Poll;
+use app\models\PollCached;
 use app\models\PollOptions;
 use Yii;
 use yii\base\UserException;
@@ -26,7 +27,7 @@ class PollService
             $poll = PollService::getPollObj($poll);
 
             foreach ($pollOptions as $option) { // добавляем все его варианты ответа
-                  array_push($poll->poll_options, 
+                  array_push($poll->poll_options,
                   [
                         'option_id' => $option->option_id,
                         'option_title' => $option->option_title,
@@ -49,6 +50,7 @@ class PollService
             $poll->save();
 
             $pollId = $poll->getPrimaryKey();
+            $pollDTO->poll_id = $pollId;
 
             foreach ($pollDTO->poll_options as $option) { // создаем все варианты ответов опроса
                   $optionClass = new PollOptions();
@@ -56,6 +58,9 @@ class PollService
                   $optionClass->option_title = $option;
                   $optionClass->save();
             }
+
+            PollService::cachePoll($pollDTO);
+
             if (!SessionService::isSet('polls')) { //записываем в сессию id созданного опроса
                   SessionService::setVariable('polls', array());
             }
@@ -138,11 +143,34 @@ class PollService
             if (!isset($json->poll_options)) {
                   $json->poll_options = [];
             }
-            return new PollDto( //достаем из JSON обьекта данные для DTO и возвращаем их 
+            return new PollDto( //достаем из JSON обьекта данные для DTO и возвращаем их
                   $json->poll_id,
                   $json->poll_name,
                   $json->poll_text,
                   $json->poll_options,
             );
+      }
+
+      /*МЕТОДЫ КЕШИРОВАНИЯ*/
+
+      /*кеширует опрос (без данных о вариантах ответа)*/
+      public static function cachePoll(PollDto $pollDto)
+      {
+            if(PollCached::findOne($pollDto->poll_id) == null)
+            {
+                  $poll = new PollCached();
+                  $poll->id = $pollDto->poll_id;
+                  $poll->poll_name = $pollDto->poll_name;
+                  $poll->poll_text = $pollDto->poll_text;
+                  $poll->save();
+            }
+      }
+
+      /*возвращает опрос из кеша (пока без вариантов ответа) по id,
+      Если опрос не найден в кеше, то возвращает null*/
+
+      //TODO: Добавить в кеш записи о вариантах ответа
+      public static function getCachePoll($pollId){
+            return PollCached::findOne($pollId);
       }
 }
